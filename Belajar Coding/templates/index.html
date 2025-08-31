@@ -6,18 +6,17 @@
     <title>Upload File PL</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
     <div class="container mt-4" style="max-width: 600px;">
-        <div class="card shadow-sm border-0">
+        <div class="card shadow-sm">
             <div class="card-body p-4">
                 <h1 class="text-center mb-4 text-primary">
                     <i class="bi bi-file-earmark-arrow-up-fill me-2"></i>
                     Upload Picking List
                 </h1>
 
-                <!-- Pesan Flash -->
                 {% with messages = get_flashed_messages(with_categories=true) %}
                     {% if messages %}
                         <div class="mt-3">
@@ -33,183 +32,78 @@
 
                 <form method="POST" enctype="multipart/form-data" id="upload-form">
                     <div class="mb-4">
-                        <div class="drop-zone border-2" id="drop-zone">
+                        <div class="drop-zone" id="drop-zone">
                             <div class="drop-zone-content">
-                                <i class="bi bi-cloud-arrow-up-fill display-5 text-muted mb-3"></i>
-                                <div class="drop-zone-text fs-6">Seret file ke sini atau klik untuk upload</div>
-                                <div class="text-muted mt-2">Format yang didukung: .xls .xlxs .pdf</div>
+                                <i class="bi bi-cloud-arrow-up-fill"></i>
+                                <div class="drop-zone-text fs-6 mt-3">Seret file ke sini atau klik untuk upload</div>
+                                <div class="text-muted mt-2">Format: .xls .xlsx .pdf</div>
                             </div>
                             <input type="file" name="file" class="form-control d-none" required accept=".pdf, .xlsx" id="file-input">
                         </div>
                         <p id="file-name" class="text-center mt-3 mb-0 fw-medium"></p>
                     </div>
-                    
-                    <button type="submit" class="btn btn-primary w-100 py-3 fw-bold">
-                        <i class="bi bi-gear-fill me-2"></i>Proses File
+
+                    <button type="submit" class="btn btn-primary w-100 py-3 fw-bold" id="submit-button">
+                        <span class="btn-text">
+                            <i class="bi bi-gear-fill me-2"></i>Proses File
+                        </span>
+                        <div class="spinner"></div>
                     </button>
                 </form>
             </div>
         </div>
 
-        <!-- Kredit -->
         <div class="text-center mt-4 text-muted small border-top pt-3">
             Powered by <strong class="text-primary">Davit Maulana</strong> | &copy; 2025
         </div>
     </div>
 
-	<!-- Tambahkan Bootstrap JS bundle di sini -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-
+	<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
     <script>
-        // Script tetap sama, hanya ditambahkan beberapa class untuk feedback visual
         document.addEventListener("DOMContentLoaded", function() {
-            let fileInput = document.getElementById("file-input");
-            let dropZone = document.getElementById("drop-zone");
-            let fileNameDisplay = document.getElementById("file-name");
+            const fileInput = document.getElementById("file-input");
+            const dropZone = document.getElementById("drop-zone");
+            const fileNameDisplay = document.getElementById("file-name");
+            const uploadForm = document.getElementById("upload-form");
+            const submitButton = document.getElementById("submit-button");
 
-            dropZone.addEventListener("click", function() {
-                fileInput.click();
-            });
+            // --- Logika Drop Zone ---
+            dropZone.addEventListener("click", () => fileInput.click());
 
-            fileInput.addEventListener("change", function() {
+            fileInput.addEventListener("change", () => {
                 if (fileInput.files.length > 0) {
                     fileNameDisplay.textContent = "File dipilih: " + fileInput.files[0].name;
-                    fileNameDisplay.classList.add('text-success');
-                    dropZone.classList.add('border-success', 'bg-soft-success');
                 }
             });
 
             dropZone.addEventListener('dragover', (e) => {
                 e.preventDefault();
-                dropZone.classList.add('border-primary', 'bg-soft-primary');
+                dropZone.classList.add('dragover');
             });
 
             dropZone.addEventListener('dragleave', () => {
-                dropZone.classList.remove('border-primary', 'bg-soft-primary');
+                dropZone.classList.remove('dragover');
             });
 
             dropZone.addEventListener('drop', (e) => {
                 e.preventDefault();
-                dropZone.classList.remove('border-primary', 'bg-soft-primary');
+                dropZone.classList.remove('dragover');
                 if (e.dataTransfer.files.length) {
                     fileInput.files = e.dataTransfer.files;
-                    fileNameDisplay.textContent = "File dipilih: " + fileInput.files[0].name;
-                    fileNameDisplay.classList.add('text-success');
-                    dropZone.classList.add('border-success', 'bg-soft-success');
+                    fileNameDisplay.textContent = "File dipilih: " + e.dataTransfer.files[0].name;
+                }
+            });
+
+            // --- Animasi Tombol Submit ---
+            uploadForm.addEventListener("submit", function() {
+                // Pastikan file sudah dipilih sebelum menampilkan loading
+                if (fileInput.files.length > 0) {
+                    submitButton.classList.add("processing");
+                    submitButton.disabled = true;
                 }
             });
         });
     </script>
-
-    <style>
-		
-		/* Gradasi Latar Belakang dan Dukungan Dark Mode */
-body {
-    min-height: 100vh;
-    margin: 0;
-    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    transition: background-color 0.5s ease, color 0.5s ease;
-}
-
-@media (prefers-color-scheme: dark) {
-    body {
-        background: linear-gradient(135deg, #2d3748 0%, #1a202c 100%);
-        color: #e2e8f0;
-    }
-
-    .card {
-        background: rgba(45, 55, 72, 0.85);
-        border-color: #4a5568;
-        backdrop-filter: blur(12px);
-        -webkit-backdrop-filter: blur(12px);
-    }
-
-    .drop-zone {
-        background-color: #2d3748;
-        border-color: #4a5568;
-    }
-
-    .text-muted {
-        color: #a0aec0 !important;
-    }
-
-    .alert-danger {
-        background-color: #e53e3e;
-        color: #fff;
-    }
-    .alert-warning {
-        background-color: #dd6b20;
-        color: #fff;
-    }
-}
-
-/* Kartu Utama dengan Efek Glassmorphism */
-.card {
-    background: rgba(255, 255, 255, 0.8);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border: 1px solid rgba(0, 0, 0, 0.05);
-    border-radius: 20px;
-    transition: all 0.3s ease;
-}
-
-/* Zona Drop File Interaktif */
-.drop-zone {
-    border: 3px dashed #cbd5e0;
-    border-radius: 15px;
-    padding: 2.5rem;
-    cursor: pointer;
-    text-align: center;
-    transition: all 0.3s ease-in-out;
-}
-
-.drop-zone:hover, .drop-zone.dragover {
-    border-color: #4299e1;
-    background-color: rgba(66, 153, 225, 0.05);
-    transform: scale(1.02);
-}
-
-.drop-zone-content i {
-    font-size: 4rem;
-    color: #a0aec0;
-    transition: color 0.3s ease;
-}
-
-.drop-zone:hover .drop-zone-content i {
-    color: #4299e1;
-}
-
-/* Tombol Proses dengan Gradasi dan Efek Hover */
-.btn-primary {
-    background: linear-gradient(135deg, #4299e1, #3182ce);
-    border: none;
-    border-radius: 10px;
-    transition: all 0.3s ease;
-    box-shadow: 0 4px 15px rgba(66, 153, 225, 0.2);
-}
-
-.btn-primary:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 7px 20px rgba(66, 153, 225, 0.4);
-}
-
-/* Penyesuaian Tambahan */
-.alert {
-    border-radius: 10px;
-}
-
-#file-name {
-    font-weight: 500;
-    color: #2d3748;
-}
-
-@media (prefers-color-scheme: dark) {
-    #file-name {
-        color: #e2e8f0;
-    }
-}
-    </style>
 </body>
-
 </html>
