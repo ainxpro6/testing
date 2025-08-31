@@ -66,8 +66,31 @@
             const submitButton = document.getElementById("submit-button");
             const alertContainer = document.getElementById("alert-container");
 
+            // --- FUNGSI ALERT YANG DIPERBARUI ---
             function showAlert(message, category = 'danger') {
-                alertContainer.innerHTML = `<div class="alert alert-${category} text-center alert-dismissible fade show">${message}<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>`;
+                // Hapus alert yang mungkin masih ada
+                alertContainer.innerHTML = '';
+                
+                const wrapper = document.createElement('div');
+                wrapper.innerHTML = [
+                    `<div class="alert alert-${category} alert-dismissible fade show" role="alert">`,
+                    `   <div>${message}</div>`,
+                    '   <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>',
+                    '</div>'
+                ].join('');
+
+                alertContainer.append(wrapper);
+                
+                // Jika ini adalah pesan sukses, atur agar menghilang setelah 5 detik
+                if (category === 'success') {
+                    const alertElement = wrapper.firstChild;
+                    setTimeout(() => {
+                        const bsAlert = bootstrap.Alert.getOrCreateInstance(alertElement);
+                        if (bsAlert) {
+                            bsAlert.close();
+                        }
+                    }, 5000); // 5000 milidetik = 5 detik
+                }
             }
 
             // --- Logika Drop Zone ---
@@ -79,7 +102,6 @@
                 dropZone.classList.remove('dragover');
                 if (e.dataTransfer.files.length) {
                     fileInput.files = e.dataTransfer.files;
-                    // Memicu event 'change' secara manual
                     fileInput.dispatchEvent(new Event('change'));
                 }
             });
@@ -89,8 +111,8 @@
                 const preview = document.getElementById('file-preview');
                 const icon = document.getElementById('file-icon');
                 const nameDisplay = document.getElementById('file-name');
+                alertContainer.innerHTML = ''; // Hapus alert saat file baru dipilih
 
-                // Reset
                 preview.classList.add('d-none');
                 icon.className = 'bi fs-2 me-2';
                 submitButton.disabled = false;
@@ -121,7 +143,7 @@
                 if (fileInput.files.length === 0) { showAlert("⚠️ Pilih file terlebih dahulu!", "warning"); return; }
                 submitButton.classList.add("processing");
                 submitButton.disabled = true;
-                alertContainer.innerHTML = '';
+                
                 const formData = new FormData(uploadForm);
                 try {
                     const response = await fetch("/", { method: "POST", body: formData });
