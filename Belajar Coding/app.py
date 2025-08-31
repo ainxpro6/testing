@@ -33,7 +33,10 @@ def index():
         file_path = os.path.join(UPLOAD_FOLDER, file.filename)
         file.save(file_path)
 
+        # --- PERUBAHAN UTAMA DI SINI ---
+        # Mengambil nama file asli tanpa ekstensi
         file_name_without_ext = os.path.splitext(file.filename)[0]
+        # Membuat nama file output yang sesuai (misal: CARGO.xlsx)
         output_filename = f"{file_name_without_ext}.xlsx"
         output_file_path = os.path.join(UPLOAD_FOLDER, output_filename)
         
@@ -50,12 +53,11 @@ def index():
 
             response = send_file(output_to_send,
                                  as_attachment=True,
+                                 # Menggunakan nama file yang sudah kita siapkan
                                  download_name=output_filename,
                                  mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
 
-            # Baris ini penting, tetapi akan diperkuat oleh vercel.json
-            response.headers["Access-Control-Expose-Headers"] = "Content-Disposition"
-
+            # Membersihkan file setelah dikirim
             time.sleep(1)
             if isinstance(output_to_send, str) and os.path.exists(output_to_send):
                 os.remove(output_to_send)
