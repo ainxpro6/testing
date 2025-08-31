@@ -59,19 +59,11 @@
             const alertContainer = document.getElementById("alert-container");
 
             function showAlert(message, category = 'danger') {
-                alertContainer.innerHTML = `
-                    <div class="alert alert-${category} text-center alert-dismissible fade show">
-                        ${message}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                    </div>`;
+                alertContainer.innerHTML = `<div class="alert alert-${category} text-center alert-dismissible fade show">${message}<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>`;
             }
 
             dropZone.addEventListener("click", () => fileInput.click());
-
-            fileInput.addEventListener("change", () => {
-                fileNameDisplay.textContent = fileInput.files.length > 0 ? "File dipilih: " + fileInput.files[0].name : "";
-            });
-            
+            fileInput.addEventListener("change", () => { fileNameDisplay.textContent = fileInput.files.length > 0 ? "File dipilih: " + fileInput.files[0].name : ""; });
             dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('dragover'); });
             dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
             dropZone.addEventListener('drop', (e) => {
@@ -85,48 +77,26 @@
 
             uploadForm.addEventListener("submit", async function(e) {
                 e.preventDefault(); 
-
-                if (fileInput.files.length === 0) {
-                    showAlert("⚠️ Pilih file terlebih dahulu!", "warning");
-                    return;
-                }
-
+                if (fileInput.files.length === 0) { showAlert("⚠️ Pilih file terlebih dahulu!", "warning"); return; }
                 submitButton.classList.add("processing");
                 submitButton.disabled = true;
                 alertContainer.innerHTML = '';
-
                 const formData = new FormData(uploadForm);
-
                 try {
                     const response = await fetch("/", { method: "POST", body: formData });
-
-                    if (!response.ok) {
-                        const errorData = await response.json();
-                        throw new Error(errorData.error || 'Terjadi kesalahan pada server.');
-                    }
-
+                    if (!response.ok) { const errorData = await response.json(); throw new Error(errorData.error || 'Terjadi kesalahan pada server.'); }
                     const disposition = response.headers.get('Content-Disposition');
                     let filename = "processed_file.xlsx";
                     if (disposition && disposition.includes('attachment')) {
                         const filenameMatch = disposition.match(/filename="(.+?)"/);
-                        // --- PERBAIKAN DI SINI ---
-                        // Memeriksa apakah filenameMatch tidak null sebelum mengakses .length
-                        if (filenameMatch && filenameMatch.length > 1) {
-                            filename = filenameMatch[1];
-                        }
+                        if (filenameMatch && filenameMatch.length > 1) { filename = filenameMatch[1]; }
                     }
-
                     const blob = await response.blob();
                     const url = window.URL.createObjectURL(blob);
                     const a = document.createElement("a");
-                    a.style.display = "none";
-                    a.href = url;
-                    a.download = filename;
-                    document.body.appendChild(a);
-                    a.click();
-                    window.URL.revokeObjectURL(url);
-                    document.body.removeChild(a);
-
+                    a.style.display = "none"; a.href = url; a.download = filename;
+                    document.body.appendChild(a); a.click();
+                    window.URL.revokeObjectURL(url); document.body.removeChild(a);
                 } catch (error) {
                     showAlert(`❌ ${error.message}`);
                 } finally {
