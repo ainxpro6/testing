@@ -72,7 +72,6 @@
                 fileNameDisplay.textContent = fileInput.files.length > 0 ? "File dipilih: " + fileInput.files[0].name : "";
             });
             
-            // (Sisa event drag & drop tetap sama)
             dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('dragover'); });
             dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
             dropZone.addEventListener('drop', (e) => {
@@ -85,7 +84,7 @@
             });
 
             uploadForm.addEventListener("submit", async function(e) {
-                e.preventDefault(); // Mencegah form submit dan refresh halaman
+                e.preventDefault(); 
 
                 if (fileInput.files.length === 0) {
                     showAlert("⚠️ Pilih file terlebih dahulu!", "warning");
@@ -110,7 +109,11 @@
                     let filename = "processed_file.xlsx";
                     if (disposition && disposition.includes('attachment')) {
                         const filenameMatch = disposition.match(/filename="(.+?)"/);
-                        if (filenameMatch.length > 1) filename = filenameMatch[1];
+                        // --- PERBAIKAN DI SINI ---
+                        // Memeriksa apakah filenameMatch tidak null sebelum mengakses .length
+                        if (filenameMatch && filenameMatch.length > 1) {
+                            filename = filenameMatch[1];
+                        }
                     }
 
                     const blob = await response.blob();
@@ -127,7 +130,6 @@
                 } catch (error) {
                     showAlert(`❌ ${error.message}`);
                 } finally {
-                    // Bagian terpenting: Reset tombol dan form setelah selesai
                     submitButton.classList.remove("processing");
                     submitButton.disabled = false;
                     fileInput.value = ""; 
