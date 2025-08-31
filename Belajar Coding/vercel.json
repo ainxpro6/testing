@@ -10,5 +10,16 @@
       "src": "/(.*)",
       "dest": "app.py"
     }
+  ],
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "Access-Control-Expose-Headers",
+          "value": "Content-Disposition"
+        }
+      ]
+    }
   ]
 }
