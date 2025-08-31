@@ -33,34 +33,28 @@ def index():
         file_path = os.path.join(UPLOAD_FOLDER, file.filename)
         file.save(file_path)
 
-        # --- PERUBAHAN UTAMA DI SINI ---
-        # Mengambil nama file asli tanpa ekstensi
-        file_name_without_ext = os.path.splitext(file.filename)[0]
-        # Membuat nama file output yang sesuai (misal: CARGO.xlsx)
-        output_filename = f"{file_name_without_ext}.xlsx"
-        output_file_path = os.path.join(UPLOAD_FOLDER, output_filename)
+        file_name = os.path.splitext(file.filename)[0]
+        output_file_path = os.path.join(UPLOAD_FOLDER, f"{file_name}.xlsx")
+        output_name = f"{file_name}.xlsx"
         
         file_extension = file.filename.rsplit(".", 1)[1].lower()
 
         try:
-            output_to_send = None
             if file_extension == "pdf":
-                process_pdf(file_path) 
-                output_to_send = output_file_path
+                process_pdf(file_path)
+                output_file = output_file_path
             elif file_extension in ["xlsx", "xls"]:
                 with open(file_path, "rb") as f:
-                    output_to_send = process_excel(f)
+                    output_file = process_excel(f)
 
-            response = send_file(output_to_send,
+            response = send_file(output_file,
                                  as_attachment=True,
-                                 # Menggunakan nama file yang sudah kita siapkan
-                                 download_name=output_filename,
+                                 download_name=output_name,
                                  mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
 
-            # Membersihkan file setelah dikirim
             time.sleep(1)
-            if isinstance(output_to_send, str) and os.path.exists(output_to_send):
-                os.remove(output_to_send)
+            if isinstance(output_file, str) and os.path.exists(output_file):
+                os.remove(output_file)
 
             return response
         except Exception as e:
