@@ -22,39 +22,63 @@ def extract_text_from_pdf(pdf_path):
 def process_data(lines):
     """
     Proses teks menjadi list data terstruktur: Nama Produk, SKU, Variant, Qty.
+    Versi ini dikoreksi untuk menangani SKU yang terbagi dalam dua baris.
     """
     data = []
+    processed_indices = set()
 
     for i in range(len(lines)):
+        if i in processed_indices:
+            continue
+
         line = lines[i].strip()
-
-        # Deteksi baris produk + SKU
-        if re.search(r'[A-Z0-9\-]{4,}$', line) and 'Default Slot' not in line:
-            parts = line.rsplit(' ', 1)
-            if len(parts) == 2:
-                nama_produk, sku = parts[0].strip(), parts[1].strip()
-
-                # Ambil qty dari baris setelahnya
-                if i + 1 < len(lines) and "Default Slot" in lines[i + 1]:
-                    qty_match = re.search(r'Default Slot (\d+)', lines[i + 1])
+        
+        # Heuristik untuk mendeteksi baris yang berisi nama produk dan bagian pertama SKU.
+        # Baris harus diakhiri dengan kata yang terlihat seperti SKU.
+        match = re.search(r'^(.*[a-zA-Z].*)(\s+)([A-Z0-9\-]{4,})$', line)
+        if match and 'Default Slot' not in line:
+            nama_produk, sku = match.group(1).strip(), match.group(3).strip()
+            
+            qty = None
+            
+            # Cek baris berikutnya untuk kelanjutan SKU dan Qty.
+            # Kasus 1: SKU terpisah, bagian kedua di baris berikutnya, dan Qty di baris setelahnya.
+            if i + 2 < len(lines) and "Default Slot" in lines[i+2]:
+                next_line = lines[i+1].strip()
+                # Cek apakah baris berikutnya adalah bagian dari SKU (satu kata alfanumerik).
+                next_line_parts = next_line.split()
+                if len(next_line_parts) == 1 and re.fullmatch(r'[A-Z0-9ΒΟΥ]+', next_line_parts[0]):
+                    sku += next_line_parts[0]
+                    qty_match = re.search(r'Default Slot (\d+)', lines[i+2])
                     if qty_match:
                         qty = qty_match.group(1)
+                        processed_indices.add(i + 1)
+                        processed_indices.add(i + 2)
 
-                        # Cari varian di 1–3 baris setelahnya
-                        varian = ""
-                        for j in range(1, 4):
-                            if i + j + 1 < len(lines):
-                                next_line = lines[i + j + 1]
-                                if "Variant:" in next_line:
-                                    varian = next_line.split("Variant:")[-1].strip()
-                                    break
+            # Kasus 2: SKU tidak terpisah (atau kasus di atas tidak cocok), Qty ada di baris berikutnya.
+            if qty is None and i + 1 < len(lines) and "Default Slot" in lines[i+1]:
+                next_line = lines[i+1].strip()
+                qty_match = re.search(r'Default Slot (\d+)', next_line)
+                if qty_match:
+                    qty = qty_match.group(1)
+                    processed_indices.add(i + 1)
 
-                        data.append({
-                            'Nama Produk': nama_produk,
-                            'SKU': sku,
-                            'Varian': varian,
-                            'Qty': int(qty)
-                        })
+            if qty:
+                # Cari varian di baris-baris sekitar setelah menemukan produk.
+                varian = ""
+                for j in range(i + 1, min(i + 4, len(lines))):
+                    if "Variant:" in lines[j]:
+                        varian = lines[j].split("Variant:")[-1].strip()
+                        break
+                
+                data.append({
+                    'Nama Produk': nama_produk,
+                    'SKU': sku,
+                    'Varian': varian,
+                    'Qty': int(qty)
+                })
+                processed_indices.add(i)
+
     return data
 
 
