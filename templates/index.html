@@ -85,18 +85,32 @@
                 try {
                     const response = await fetch("/", { method: "POST", body: formData });
                     if (!response.ok) { const errorData = await response.json(); throw new Error(errorData.error || 'Terjadi kesalahan pada server.'); }
+                    
+                    // --- LOGIKA PENAMAAN FILE YANG DIPERBARUI ---
                     const disposition = response.headers.get('Content-Disposition');
-                    let filename = "processed_file.xlsx";
-                    if (disposition && disposition.includes('attachment')) {
-                        const filenameMatch = disposition.match(/filename="(.+?)"/);
-                        if (filenameMatch && filenameMatch.length > 1) { filename = filenameMatch[1]; }
+                    let filename = "processed_file.xlsx"; // Nama default
+
+                    if (disposition) {
+                        // Coba metode 1: mencari nama file dalam tanda kutip (paling umum)
+                        let filenameMatch = disposition.match(/filename="([^"]+)"/);
+                        if (filenameMatch && filenameMatch[1]) {
+                            filename = filenameMatch[1];
+                        } else {
+                            // Coba metode 2: mencari nama file setelah 'filename=' (tanpa tanda kutip)
+                            filenameMatch = disposition.match(/filename=([^;]+)/);
+                            if (filenameMatch && filenameMatch[1]) {
+                                filename = filenameMatch[1];
+                            }
+                        }
                     }
+                    
                     const blob = await response.blob();
                     const url = window.URL.createObjectURL(blob);
                     const a = document.createElement("a");
                     a.style.display = "none"; a.href = url; a.download = filename;
                     document.body.appendChild(a); a.click();
                     window.URL.revokeObjectURL(url); document.body.removeChild(a);
+
                 } catch (error) {
                     showAlert(`❌ ${error.message}`);
                 } finally {
