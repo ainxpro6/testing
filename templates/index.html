@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upload File PL</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container mt-4" style="max-width: 600px;">
+        <div class="card shadow-sm">
+            <div class="card-body p-4">
+                <h1 class="text-center mb-4 text-primary">
+                    <i class="bi bi-file-earmark-arrow-up-fill me-2"></i>
+                    Upload Picking List
+                </h1>
+
+                <div id="alert-container"></div>
+
+                <form method="POST" enctype="multipart/form-data" id="upload-form">
+                    <div class="mb-4">
+                        <div class="drop-zone" id="drop-zone">
+                            <div class="drop-zone-content">
+                                <i class="bi bi-cloud-arrow-up-fill"></i>
+                                <div class="drop-zone-text fs-6 mt-3">Seret file ke sini atau klik untuk upload</div>
+                                <div class="text-muted mt-2">Format: .xls .xlsx .pdf</div>
+                            </div>
+                            <input type="file" name="file" class="form-control d-none" required accept=".pdf, .xlsx" id="file-input">
+                        </div>
+                        <p id="file-name" class="text-center mt-3 mb-0 fw-medium"></p>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary w-100 py-3 fw-bold" id="submit-button">
+                        <span class="btn-text">
+                            <i class="bi bi-gear-fill me-2"></i>Proses File
+                        </span>
+                        <div class="spinner"></div>
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <div class="text-center mt-4 text-muted small border-top pt-3">
+            Powered by <strong class="text-primary">Davit Maulana</strong> | &copy; 2025
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            const fileInput = document.getElementById("file-input");
+            const dropZone = document.getElementById("drop-zone");
+            const fileNameDisplay = document.getElementById("file-name");
+            const uploadForm = document.getElementById("upload-form");
+            const submitButton = document.getElementById("submit-button");
+            const alertContainer = document.getElementById("alert-container");
+
+            function showAlert(message, category = 'danger') {
+                alertContainer.innerHTML = `<div class="alert alert-${category} text-center alert-dismissible fade show">${message}<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>`;
+            }
+
+            dropZone.addEventListener("click", () => fileInput.click());
+            fileInput.addEventListener("change", () => { fileNameDisplay.textContent = fileInput.files.length > 0 ? "File dipilih: " + fileInput.files[0].name : ""; });
+            dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('dragover'); });
+            dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+            dropZone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                dropZone.classList.remove('dragover');
+                if (e.dataTransfer.files.length) {
+                    fileInput.files = e.dataTransfer.files;
+                    fileNameDisplay.textContent = "File dipilih: " + e.dataTransfer.files[0].name;
+                }
+            });
+
+            uploadForm.addEventListener("submit", async function(e) {
+                e.preventDefault(); 
+                if (fileInput.files.length === 0) { showAlert("⚠️ Pilih file terlebih dahulu!", "warning"); return; }
+                submitButton.classList.add("processing");
+                submitButton.disabled = true;
+                alertContainer.innerHTML = '';
+                const formData = new FormData(uploadForm);
+                try {
+                    const response = await fetch("/", { method: "POST", body: formData });
+                    if (!response.ok) { const errorData = await response.json(); throw new Error(errorData.error || 'Terjadi kesalahan pada server.'); }
+                    const disposition = response.headers.get('Content-Disposition');
+                    let filename = "processed_file.xlsx";
+                    if (disposition && disposition.includes('attachment')) {
+                        const filenameMatch = disposition.match(/filename="(.+?)"/);
+                        if (filenameMatch && filenameMatch.length > 1) { filename = filenameMatch[1]; }
+                    }
+                    const blob = await response.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement("a");
+                    a.style.display = "none"; a.href = url; a.download = filename;
+                    document.body.appendChild(a); a.click();
+                    window.URL.revokeObjectURL(url); document.body.removeChild(a);
+                } catch (error) {
+                    showAlert(`❌ ${error.message}`);
+                } finally {
+                    submitButton.classList.remove("processing");
+                    submitButton.disabled = false;
+                    fileInput.value = ""; 
+                    fileNameDisplay.textContent = "";
+                }
+            });
+        });
+    </script>
+</body>
+</html>
