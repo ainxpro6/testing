@@ -103,129 +103,113 @@
 
     <style>
 		
-		/* 1. Base gradient untuk light mode */
-        body {
-            min-height: 100vh;
-            margin: 0;
-            background: linear-gradient(
-                135deg,
-                hsl(210, 20%, 98%) 0%,
-                hsl(210, 14%, 93%) 100%
-            );
-        }
+		/* Gradasi Latar Belakang dan Dukungan Dark Mode */
+body {
+    min-height: 100vh;
+    margin: 0;
+    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    transition: background-color 0.5s ease, color 0.5s ease;
+}
 
-        /* 2. Dark mode adaptation */
-        @media (prefers-color-scheme: dark) {
-            body {
-                background: linear-gradient(
-                    135deg,
-                    hsl(210, 29%, 24%) 0%,
-                    hsl(210, 31%, 15%) 100%
-                );
-                color: #ffffff;
-            }
-            
-            .card {
-                background: rgba(40, 40, 40, 0.95) !important;
-                border-color: hsl(0, 0%, 25%);
-            }
-            
-            .drop-zone {
-                background: rgba(30, 30, 30, 0.9);
-                border-color: hsl(0, 0%, 25%);
-            }
-        }
+@media (prefers-color-scheme: dark) {
+    body {
+        background: linear-gradient(135deg, #2d3748 0%, #1a202c 100%);
+        color: #e2e8f0;
+    }
 
-        /* 3. Pastikan elemen child tidak menutupi background */
-        .container {
-            background: transparent !important;
-        }
+    .card {
+        background: rgba(45, 55, 72, 0.85);
+        border-color: #4a5568;
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+    }
 
-        /* 4. Efek transisi untuk perubahan warna */
-        body,
-        .card,
-        .drop-zone {
-            transition: 
-                background-color 0.5s ease,
-                border-color 0.5s ease;
-        }
-		
-		/* Tambahkan gradasi dan dark mode */
-        body {
-            min-height: 100vh;
-            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-            transition: all 0.3s ease;
-        }
+    .drop-zone {
+        background-color: #2d3748;
+        border-color: #4a5568;
+    }
 
-        @media (prefers-color-scheme: dark) {
-            body {
-                background: linear-gradient(135deg, #2c3e50 0%, #3498db 100%);
-                color: #ffffff;
-            }
-            
-            .card {
-                background-color: rgba(40, 40, 40, 0.9) !important;
-                border-color: #404040;
-            }
-            
-            .drop-zone {
-                background-color: rgba(30, 30, 30, 0.9);
-                border-color: #404040;
-            }
-            
-            .text-muted {
-                color: #a0a0a0 !important;
-            }
-        }
+    .text-muted {
+        color: #a0aec0 !important;
+    }
 
-        /* Tambahkan efek glassmorphism */
-        .card {
-            background: rgba(255, 255, 255, 0.9);
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-        }
-		
-        .drop-zone {
-            border: 2px dashed #dee2e6;
-            border-radius: 15px;
-            padding: 2rem;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            background: white;
-        }
+    .alert-danger {
+        background-color: #e53e3e;
+        color: #fff;
+    }
+    .alert-warning {
+        background-color: #dd6b20;
+        color: #fff;
+    }
+}
 
-        .drop-zone:hover {
-            border-color: #0d6efd;
-            background-color: rgba(13, 110, 253, 0.05);
-            transform: translateY(-2px);
-        }
+/* Kartu Utama dengan Efek Glassmorphism */
+.card {
+    background: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(0, 0, 0, 0.05);
+    border-radius: 20px;
+    transition: all 0.3s ease;
+}
 
-        .drop-zone-content {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            min-height: 150px;
-        }
+/* Zona Drop File Interaktif */
+.drop-zone {
+    border: 3px dashed #cbd5e0;
+    border-radius: 15px;
+    padding: 2.5rem;
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.3s ease-in-out;
+}
 
-        .bg-soft-primary {
-            background-color: rgba(13, 110, 253, 0.1) !important;
-        }
+.drop-zone:hover, .drop-zone.dragover {
+    border-color: #4299e1;
+    background-color: rgba(66, 153, 225, 0.05);
+    transform: scale(1.02);
+}
 
-        .bg-soft-success {
-            background-color: rgba(25, 135, 84, 0.1) !important;
-        }
+.drop-zone-content i {
+    font-size: 4rem;
+    color: #a0aec0;
+    transition: color 0.3s ease;
+}
 
-        .btn-primary {
-            background: linear-gradient(135deg, #0d6efd, #0b5ed7);
-            border: none;
-            transition: all 0.3s ease;
-        }
+.drop-zone:hover .drop-zone-content i {
+    color: #4299e1;
+}
 
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(13, 110, 253, 0.3);
-        }
+/* Tombol Proses dengan Gradasi dan Efek Hover */
+.btn-primary {
+    background: linear-gradient(135deg, #4299e1, #3182ce);
+    border: none;
+    border-radius: 10px;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(66, 153, 225, 0.2);
+}
+
+.btn-primary:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 7px 20px rgba(66, 153, 225, 0.4);
+}
+
+/* Penyesuaian Tambahan */
+.alert {
+    border-radius: 10px;
+}
+
+#file-name {
+    font-weight: 500;
+    color: #2d3748;
+}
+
+@media (prefers-color-scheme: dark) {
+    #file-name {
+        color: #e2e8f0;
+    }
+}
     </style>
 </body>
+
 </html>
