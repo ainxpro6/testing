@@ -34,7 +34,7 @@
 body {
     min-height: 100vh;
     margin: 0;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    font-family: 'Poppins', sans-serif; /* Menggunakan Google Font */
     color: #333;
     /* Animasi gradasi latar belakang yang halus */
     background: linear-gradient(-45deg, #e0eafc, #cfdef3, #eef1f5, #c3cfe2);
@@ -74,7 +74,6 @@ body {
     border: 1px solid rgba(255, 255, 255, 0.2);
     border-radius: 20px;
     box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
-    /* Animasi saat kartu pertama kali muncul */
     animation: fadeInSlideUp 0.8s ease-out forwards;
 }
 
@@ -90,20 +89,19 @@ body {
 .drop-zone:hover, .drop-zone.dragover {
     border-color: #3182ce;
     background-color: rgba(49, 130, 206, 0.08);
-    transform: scale(1.02); /* Sedikit membesar saat hover */
+    transform: scale(1.02);
 }
 
 .drop-zone-content i {
     font-size: 4rem;
     color: #a0aec0;
     transition: all 0.4s ease;
-    /* Animasi ikon awan yang melayang */
     animation: floatIcon 3s ease-in-out infinite;
 }
 .drop-zone:hover .drop-zone-content i {
     color: #3182ce;
     transform: scale(1.1);
-    animation-play-state: paused; /* Hentikan animasi melayang saat hover */
+    animation-play-state: paused;
 }
 
 /* --- Gaya Tombol & Animasi Loading --- */
@@ -116,9 +114,13 @@ body {
     transition: all 0.3s ease;
     box-shadow: 0 4px 15px rgba(66, 153, 225, 0.2);
 }
-.btn-primary:hover {
+.btn-primary:hover:not(:disabled) {
     transform: translateY(-3px);
     box-shadow: 0 7px 20px rgba(66, 153, 225, 0.4);
+}
+.btn-primary:disabled {
+    cursor: not-allowed;
+    background: #a0aec0;
 }
 .btn-primary .btn-text {
     transition: opacity 0.2s ease;
