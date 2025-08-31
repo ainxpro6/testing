@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, send_file, flash
+from flask import Flask, render_template, request, send_file, jsonify
 import os
 import time
 from ubah1 import main as process_pdf
@@ -20,63 +20,50 @@ def allowed_file(filename):
 def index():
     if request.method == "POST":
         if "file" not in request.files:
-            flash("❌ Tidak ada file yang diupload!", "danger")
-            return render_template("index.html")
+            return jsonify({"error": "Tidak ada file yang diupload!"}), 400
 
         file = request.files["file"]
 
         if file.filename == "":
-            flash("⚠️ Pilih file terlebih dahulu!", "warning")
-            return render_template("index.html")
+            return jsonify({"error": "Pilih file terlebih dahulu!"}), 400
 
         if not allowed_file(file.filename):
-            flash("🚫 Format file tidak diizinkan! Hanya PDF dan Excel yang diperbolehkan.", "danger")
-            return render_template("index.html")
+            return jsonify({"error": "Format file tidak diizinkan! Hanya PDF dan Excel yang diperbolehkan."}), 400
 
         file_path = os.path.join(UPLOAD_FOLDER, file.filename)
         file.save(file_path)
 
-        # Ambil nama file tanpa ekstensi
         file_name = os.path.splitext(file.filename)[0]
+        output_file_path = os.path.join(UPLOAD_FOLDER, f"{file_name}.xlsx")
+        output_name = f"{file_name}.xlsx"
         
-        # Tentukan nama file output sesuai dengan file input (ubah ekstensi menjadi .xlsx)
-        output_file = os.path.join(UPLOAD_FOLDER, f"{file_name}.xlsx")
-
         file_extension = file.filename.rsplit(".", 1)[1].lower()
 
         try:
             if file_extension == "pdf":
-                process_pdf(file_path)  # Memproses file PDF
-                output_file = output_file  # Nama file output
+                process_pdf(file_path)
+                output_file = output_file_path
             elif file_extension in ["xlsx", "xls"]:
                 with open(file_path, "rb") as f:
-                    output_file = process_excel(f)  # Memproses file Excel
+                    output_file = process_excel(f)
 
-            # Menambahkan download_name dan mimetype pada send_file
             response = send_file(output_file,
                                  as_attachment=True,
-                                 download_name=f"{file_name}.xlsx",  # Nama file output yang sesuai
+                                 download_name=output_name,
                                  mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
 
-            # Tunggu sebentar sebelum menghapus file
             time.sleep(1)
-
-            # Pastikan hanya menghapus file yang ada di disk, bukan objek BytesIO
-            if isinstance(output_file, str):
-                if os.path.exists(file_path):
-                    os.remove(file_path)  # Menghapus file input (PDF atau Excel asli)
-                if os.path.exists(output_file):
-                    os.remove(output_file)  # Menghapus file output Excel
+            if isinstance(output_file, str) and os.path.exists(output_file):
+                os.remove(output_file)
 
             return response
         except Exception as e:
             print(f"Error during file processing: {e}")
-            flash(f"Terjadi kesalahan: {e}", "danger")
-            return render_template("index.html")
+            return jsonify({"error": f"Terjadi kesalahan: {e}"}), 500
         finally:
-            # Jika menggunakan file dalam memori seperti BytesIO, tidak perlu dihapus
-            # Pastikan tidak ada file yang tertinggal terkunci
-            print("Proses selesai. File output tidak terkunci.")
+            if os.path.exists(file_path):
+                os.remove(file_path)
+            print("Proses selesai.")
             
     return render_template("index.html")
 
