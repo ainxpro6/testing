@@ -53,8 +53,7 @@ def index():
                                  download_name=output_filename,
                                  mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
 
-            # --- INI PERBAIKANNYA ---
-            # Mengizinkan browser untuk mengakses header 'Content-Disposition'
+            # Baris ini penting, tetapi akan diperkuat oleh vercel.json
             response.headers["Access-Control-Expose-Headers"] = "Content-Disposition"
 
             time.sleep(1)
