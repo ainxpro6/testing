@@ -8,7 +8,6 @@ from openpyxl.styles import Font, Alignment, Border, Side
 def load_master_skus(file_path='daftar_sku.txt'):
     """Memuat daftar SKU utuh dari file teks."""
     if not os.path.exists(file_path):
-        print(f"Peringatan: File '{file_path}' tidak ditemukan.")
         return set()
     try:
         with open(file_path, 'r', encoding='utf-8') as f:
@@ -19,11 +18,9 @@ def load_master_skus(file_path='daftar_sku.txt'):
 
 def find_matching_sku(partial_sku, master_skus):
     """Mencocokkan dan membersihkan SKU."""
-    # Normalisasi karakter yang sering salah baca
     normalized_sku = partial_sku.replace('Β', 'B').replace('Ο', 'O').replace('Υ', 'Y')
     if master_skus:
         for full_sku in master_skus:
-            # Menggunakan startswith untuk menangani SKU terpotong
             if full_sku.startswith(normalized_sku):
                 return full_sku
     return normalized_sku
@@ -39,76 +36,84 @@ def extract_text_from_pdf(pdf_path):
                     lines.extend(page_text.split('\n'))
     except Exception as e:
         print(f"Gagal membaca PDF: {e}")
-    return lines
+    return [line for line in lines if line.strip()] # Hapus baris kosong
 
 def process_data(lines, master_skus):
     """
-    Logika baru: Mengidentifikasi blok data dan membedahnya.
-    Ini jauh lebih andal daripada metode per baris.
+    Logika baru: Bekerja mundur dari baris 'Default Slot' untuk memastikan akurasi.
     """
     data = []
-    i = 0
-    while i < len(lines):
-        line = lines[i].strip()
+    processed_indices = set()
 
-        # Lewati baris yang tidak relevan di awal
-        if not line or line.startswith("desty") or line.startswith("Jumlah") or line.startswith("Tanggal") or line.startswith("Dicetak") or line.startswith("Picking List") or line.startswith("Halaman") or line.startswith("Nama Produk"):
-            i += 1
+    # Iterasi mundur agar modifikasi indeks tidak mengganggu loop
+    for i in range(len(lines) - 1, -1, -1):
+        if i in processed_indices:
             continue
 
-        # Awal dari sebuah blok data produk
-        block_lines = [line]
-        end_of_block_index = i
-
-        # Cari akhir dari blok (baris dengan "Default Slot")
-        for j in range(i + 1, min(i + 5, len(lines))):
-            next_line = lines[j].strip()
-            block_lines.append(next_line)
-            if "Default Slot" in next_line:
-                end_of_block_index = j
-                break
+        line = lines[i].strip()
         
-        # Jika akhir blok ditemukan, proses blok tersebut
-        if end_of_block_index > i:
+        # 1. TEMUKAN JANGKARNYA
+        if "Default Slot" in line:
+            qty_match = re.search(r'Default Slot (\d+)$', line)
+            if not qty_match:
+                continue
+            
+            qty = int(qty_match.group(1))
+            
+            # 2. KUMPULKAN BLOK TEKS DI ATAS JANGKAR
+            # Kumpulkan 3 baris di atasnya, yang kemungkinan besar berisi semua info
+            start_index = max(0, i - 3)
+            block_lines = []
+            for j in range(start_index, i):
+                # Jangan sertakan header atau data yang sudah diproses
+                if j not in processed_indices and "Nama Produk" not in lines[j] and "desty" not in lines[j]:
+                    block_lines.append(lines[j].strip())
+            
+            if not block_lines:
+                continue
+
             full_block_text = " ".join(block_lines)
             
-            # Ekstrak Qty
-            qty_match = re.search(r'Default Slot (\d+)$', full_block_text)
-            qty = qty_match.group(1) if qty_match else '0'
-
-            # Ekstrak Varian (jika ada)
-            varian_match = re.search(r'Variant: (.*?)(?=\s[A-Z0-9\-]{4,}|$)', full_block_text)
-            varian = varian_match.group(1).strip() if varian_match else ''
-
-            # Ekstrak Nama Produk dan SKU
-            # Menghapus varian dan qty dari teks blok untuk menyisakan Nama Produk & SKU
-            text_for_sku = full_block_text.replace(f"Default Slot {qty}", "")
-            if varian:
-                text_for_sku = text_for_sku.replace(f"Variant: {varian}", "")
+            # 3. EKSTRAKSI INFORMASI DARI BLOK
             
-            # Pola untuk menemukan SKU di akhir teks
-            sku_match = re.search(r'(\s+)([A-Z0-9\-ΒΟΥ]+(?:\s[A-Z0-9\-ΒΟΥ]+)?)$', text_for_sku.strip())
+            # Ekstrak Varian (jika ada)
+            varian = ""
+            varian_match = re.search(r'Variant: (.*)', full_block_text)
+            if varian_match:
+                varian = varian_match.group(1).strip()
+                # Hapus varian dari teks untuk mempermudah ekstraksi selanjutnya
+                full_block_text = full_block_text.replace(varian_match.group(0), "").strip()
+            
+            # Ekstrak SKU (kata terakhir yang terlihat seperti SKU)
+            # Pola ini mencari kata terakhir yang terdiri dari huruf besar, angka, dan strip.
+            # Ia juga bisa menangani SKU yang terpotong menjadi dua kata.
+            sku_match = re.search(r'([A-Z0-9\-]{4,})\s*([A-Z0-9ΒΟΥ]+)?$', full_block_text)
+            raw_sku = ""
+            nama_produk = full_block_text # Default nama produk adalah semua teks
             
             if sku_match:
-                # SKU adalah bagian terakhir, sisanya adalah Nama Produk
-                raw_sku = sku_match.group(2).replace(" ", "")
-                nama_produk = text_for_sku[:sku_match.start()].strip()
-                final_sku = find_matching_sku(raw_sku, master_skus)
-
-                # Tambahkan data yang berhasil diekstrak
+                part1 = sku_match.group(1) or ""
+                part2 = sku_match.group(2) or ""
+                raw_sku = part1 + part2
+                # Nama produk adalah semua teks sebelum SKU
+                nama_produk = full_block_text[:sku_match.start()].strip()
+                
+            final_sku = find_matching_sku(raw_sku, master_skus)
+            
+            # 4. SIMPAN DATA & TANDAI BARIS YANG SUDAH DIPROSES
+            if nama_produk: # Hanya simpan jika ada nama produk
                 data.append({
                     'Nama Produk': nama_produk,
                     'SKU': final_sku,
                     'Varian': varian,
-                    'Qty': int(qty)
+                    'Qty': qty
                 })
+                # Tandai semua baris dalam blok ini sebagai sudah diproses
+                for j in range(start_index, i + 1):
+                    processed_indices.add(j)
 
-            # Lanjutkan loop dari setelah blok ini
-            i = end_of_block_index + 1
-        else:
-            # Jika tidak ditemukan akhir blok, lanjutkan ke baris berikutnya
-            i += 1
-            
+    # Kembalikan urutan seperti semula (karena kita memprosesnya terbalik)
+    data.reverse()
     return data
 
 def save_to_excel(data, output_file):
@@ -147,8 +152,9 @@ def main(file_path):
     master_skus = load_master_skus()
     text_lines = extract_text_from_pdf(file_path)
     processed_data = process_data(text_lines, master_skus)
+    
     save_to_excel(processed_data, output_file)
-    print(f"Data telah disimpan ke {output_file}")
+    print(f"Data telah disimpan ke {output_file} dengan {len(processed_data)} baris.")
 
 if __name__ == "__main__":
     if len(sys.argv) != 2:
