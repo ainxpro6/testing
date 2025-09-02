@@ -6,117 +6,115 @@ from openpyxl import Workbook
 from openpyxl.styles import Font, Alignment, Border, Side
 
 def load_master_skus(file_path='daftar_sku.txt'):
-    """
-    Memuat daftar SKU utuh dari file teks.
-    Mengembalikan sebuah set untuk pencarian yang lebih cepat.
-    """
+    """Memuat daftar SKU utuh dari file teks."""
     if not os.path.exists(file_path):
-        print(f"Peringatan: File '{file_path}' tidak ditemukan. Pencocokan SKU tidak akan dilakukan.")
-        return None
-    with open(file_path, 'r', encoding='utf-8') as f:
-        return {line.strip() for line in f if line.strip()}
+        print(f"Peringatan: File '{file_path}' tidak ditemukan.")
+        return set()
+    try:
+        with open(file_path, 'r', encoding='utf-8') as f:
+            return {line.strip() for line in f if line.strip()}
+    except Exception as e:
+        print(f"Error saat membaca {file_path}: {e}")
+        return set()
 
 def find_matching_sku(partial_sku, master_skus):
-    """
-    Mencari SKU utuh di master_skus yang cocok dengan SKU terpotong.
-    Juga membersihkan karakter aneh.
-    """
+    """Mencocokkan dan membersihkan SKU."""
+    # Normalisasi karakter yang sering salah baca
     normalized_sku = partial_sku.replace('Β', 'B').replace('Ο', 'O').replace('Υ', 'Y')
     if master_skus:
         for full_sku in master_skus:
+            # Menggunakan startswith untuk menangani SKU terpotong
             if full_sku.startswith(normalized_sku):
                 return full_sku
     return normalized_sku
 
 def extract_text_from_pdf(pdf_path):
-    """
-    Ekstrak teks per halaman dari PDF.
-    """
+    """Mengekstrak teks mentah dari PDF."""
     lines = []
-    with pdfplumber.open(pdf_path) as pdf:
-        for page in pdf.pages:
-            page_text = page.extract_text()
-            if page_text:
-                lines.extend(page_text.split('\n'))
+    try:
+        with pdfplumber.open(pdf_path) as pdf:
+            for page in pdf.pages:
+                page_text = page.extract_text(x_tolerance=2, y_tolerance=2)
+                if page_text:
+                    lines.extend(page_text.split('\n'))
+    except Exception as e:
+        print(f"Gagal membaca PDF: {e}")
     return lines
 
 def process_data(lines, master_skus):
     """
-    Proses teks menjadi data terstruktur dengan logika varian dan SKU yang diperbaiki.
+    Logika baru: Mengidentifikasi blok data dan membedahnya.
+    Ini jauh lebih andal daripada metode per baris.
     """
     data = []
-    processed_indices = set()
+    i = 0
+    while i < len(lines):
+        line = lines[i].strip()
 
-    for i in range(len(lines)):
-        if i in processed_indices:
+        # Lewati baris yang tidak relevan di awal
+        if not line or line.startswith("desty") or line.startswith("Jumlah") or line.startswith("Tanggal") or line.startswith("Dicetak") or line.startswith("Picking List") or line.startswith("Halaman") or line.startswith("Nama Produk"):
+            i += 1
             continue
 
-        line = lines[i].strip()
-        match = re.search(r'^(.*[a-zA-Z].*)(\s+)([A-Z0-9\-]{4,})$', line)
+        # Awal dari sebuah blok data produk
+        block_lines = [line]
+        end_of_block_index = i
 
-        if match and 'Default Slot' not in line:
-            nama_produk, sku_part1 = match.group(1).strip(), match.group(3).strip()
+        # Cari akhir dari blok (baris dengan "Default Slot")
+        for j in range(i + 1, min(i + 5, len(lines))):
+            next_line = lines[j].strip()
+            block_lines.append(next_line)
+            if "Default Slot" in next_line:
+                end_of_block_index = j
+                break
+        
+        # Jika akhir blok ditemukan, proses blok tersebut
+        if end_of_block_index > i:
+            full_block_text = " ".join(block_lines)
             
-            qty = None
-            varian = ""
-            final_sku = ""
-            indices_to_skip = {i}
+            # Ekstrak Qty
+            qty_match = re.search(r'Default Slot (\d+)$', full_block_text)
+            qty = qty_match.group(1) if qty_match else '0'
 
-            # Cek jika varian ada di dalam baris nama produk itu sendiri
-            if "Variant:" in nama_produk:
-                parts = nama_produk.split("Variant:")
-                if len(parts) == 2:
-                    nama_produk, varian = parts[0].strip(), parts[1].strip()
+            # Ekstrak Varian (jika ada)
+            varian_match = re.search(r'Variant: (.*?)(?=\s[A-Z0-9\-]{4,}|$)', full_block_text)
+            varian = varian_match.group(1).strip() if varian_match else ''
 
-            # --- Logika Baru yang Memprioritaskan Varian ---
-            line1_after = lines[i + 1].strip() if i + 1 < len(lines) else ""
-            line2_after = lines[i + 2].strip() if i + 2 < len(lines) else ""
-
-            # Kasus 1: Varian ada di baris berikutnya, Qty di baris setelahnya
-            if "Variant:" in line1_after and "Default Slot" in line2_after:
-                varian = line1_after.split("Variant:")[-1].strip()
-                qty_match = re.search(r'Default Slot (\d+)', line2_after)
-                if qty_match:
-                    qty = qty_match.group(1)
-                    final_sku = find_matching_sku(sku_part1, master_skus)
-                    indices_to_skip.update([i + 1, i + 2])
-
-            # Kasus 2: SKU terpotong, Qty di baris setelahnya
-            elif "Default Slot" in line2_after and qty is None:
-                sku_part2 = line1_after.split()[0] if line1_after.split() else ""
-                combined_sku = sku_part1 + sku_part2
-                qty_match = re.search(r'Default Slot (\d+)', line2_after)
-                if qty_match:
-                    qty = qty_match.group(1)
-                    final_sku = find_matching_sku(combined_sku, master_skus)
-                    indices_to_skip.update([i + 1, i + 2])
+            # Ekstrak Nama Produk dan SKU
+            # Menghapus varian dan qty dari teks blok untuk menyisakan Nama Produk & SKU
+            text_for_sku = full_block_text.replace(f"Default Slot {qty}", "")
+            if varian:
+                text_for_sku = text_for_sku.replace(f"Variant: {varian}", "")
             
-            # Kasus 3: SKU standar (1 baris), Qty di baris berikutnya
-            elif "Default Slot" in line1_after and qty is None:
-                qty_match = re.search(r'Default Slot (\d+)', line1_after)
-                if qty_match:
-                    qty = qty_match.group(1)
-                    final_sku = find_matching_sku(sku_part1, master_skus)
-                    indices_to_skip.add(i + 1)
+            # Pola untuk menemukan SKU di akhir teks
+            sku_match = re.search(r'(\s+)([A-Z0-9\-ΒΟΥ]+(?:\s[A-Z0-9\-ΒΟΥ]+)?)$', text_for_sku.strip())
+            
+            if sku_match:
+                # SKU adalah bagian terakhir, sisanya adalah Nama Produk
+                raw_sku = sku_match.group(2).replace(" ", "")
+                nama_produk = text_for_sku[:sku_match.start()].strip()
+                final_sku = find_matching_sku(raw_sku, master_skus)
 
-            if qty:
+                # Tambahkan data yang berhasil diekstrak
                 data.append({
                     'Nama Produk': nama_produk,
                     'SKU': final_sku,
                     'Varian': varian,
                     'Qty': int(qty)
                 })
-                processed_indices.update(indices_to_skip)
 
+            # Lanjutkan loop dari setelah blok ini
+            i = end_of_block_index + 1
+        else:
+            # Jika tidak ditemukan akhir blok, lanjutkan ke baris berikutnya
+            i += 1
+            
     return data
 
 def save_to_excel(data, output_file):
-    """
-    Simpan data ke dalam file Excel dengan format rapi.
-    """
+    """Menyimpan data ke file Excel."""
     wb = Workbook()
     ws = wb.active
-
     headers = ["Nama Produk", "Variant", "SKU", "Qty"]
     ws.append(headers)
 
@@ -125,13 +123,13 @@ def save_to_excel(data, output_file):
         cell.alignment = Alignment(horizontal='center', vertical='center')
 
     for item in data:
-        row = [ item.get("Nama Produk", ""), item.get("Varian", ""), item.get("SKU", ""), item.get("Qty", "") ]
+        row = [ item.get(h, "") for h in ["Nama Produk", "Varian", "SKU", "Qty"] ]
         ws.append(row)
 
     ws.column_dimensions['A'].width = 60
-    ws.column_dimensions['B'].width = 25
-    ws.column_dimensions['C'].width = 25
-    ws.column_dimensions['D'].width = 5
+    ws.column_dimensions['B'].width = 30
+    ws.column_dimensions['C'].width = 30
+    ws.column_dimensions['D'].width = 8
 
     thin_border = Border(left=Side(style='thin'), right=Side(style='thin'), top=Side(style='thin'), bottom=Side(style='thin'))
     for row in ws.iter_rows(min_row=1):
@@ -142,9 +140,7 @@ def save_to_excel(data, output_file):
     wb.save(output_file)
 
 def main(file_path):
-    """
-    Fungsi utama untuk memproses file PDF menjadi file Excel.
-    """
+    """Fungsi utama."""
     file_name = os.path.splitext(os.path.basename(file_path))[0]
     output_file = os.path.join(os.path.dirname(file_path), f"{file_name}.xlsx")
 
@@ -152,7 +148,6 @@ def main(file_path):
     text_lines = extract_text_from_pdf(file_path)
     processed_data = process_data(text_lines, master_skus)
     save_to_excel(processed_data, output_file)
-
     print(f"Data telah disimpan ke {output_file}")
 
 if __name__ == "__main__":
