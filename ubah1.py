@@ -131,7 +131,7 @@ def save_to_excel(data, output_file):
 def main(file_path):
     
     file_name = os.path.splitext(os.path.basename(file_path))[0]
-    output_file = os.path.join(os.path.dirname(file_path), f"{file_name}_diolah.xlsx")
+    output_file = os.path.join(os.path.dirname(file_path), f"{file_name}.xlsx")
 
     raw_data_df = extract_and_process_pdf(file_path)
     cleaned_data = clean_data(raw_data_df)
