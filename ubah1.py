@@ -1,14 +1,11 @@
 import pdfplumber
 import pandas as pd
 import re
-import os
-import sys
 from openpyxl import Workbook
 from openpyxl.styles import Font, Alignment, Border, Side
-
+from io import BytesIO
 
 def extract_and_process_pdf(pdf_path):
-
     print("Memulai metode 'Grid' untuk ekstraksi data mentah...")
 
     KOLOM_BOUNDARIES = [
@@ -48,7 +45,6 @@ def extract_and_process_pdf(pdf_path):
 
 
 def clean_data(df_raw):
-
     print("Menerapkan aturan pembersihan pada data...")
     processed_data = []
     for index, row in df_raw.iterrows():
@@ -82,8 +78,7 @@ def clean_data(df_raw):
     return processed_data
 
 
-def save_to_excel(data, output_file):
-
+def save_to_excel_in_memory(data):
     wb = Workbook()
     ws = wb.active
 
@@ -124,28 +119,18 @@ def save_to_excel(data, output_file):
     for row in ws.iter_rows(min_row=1, max_row=ws.max_row, min_col=1, max_col=ws.max_column):
         for cell in row:
             cell.border = thin_border
-
-    wb.save(output_file)
+    
+    output = BytesIO()
+    wb.save(output)
+    output.seek(0)
+    return output
 
 
 def main(file_path):
     
-    file_name = os.path.splitext(os.path.basename(file_path))[0]
-    output_file = os.path.join(os.path.dirname(file_path), f"{file_name}.xlsx")
-
     raw_data_df = extract_and_process_pdf(file_path)
     cleaned_data = clean_data(raw_data_df)
-    save_to_excel(cleaned_data, output_file)
+    excel_file_in_memory = save_to_excel_in_memory(cleaned_data)
 
-    print(f"\nProses Selesai!")
-    print(f"Data telah disimpan ke {output_file}")
-
-
-if __name__ == "__main__":
-    if len(sys.argv) != 2:
-        print("Penggunaan: python ubah.py <file_pdf>")
-        sys.exit(1)
-
-    pdf_file_path = sys.argv[1]
-    main(pdf_file_path)
-    
+    print("\nProses Selesai! File Excel dibuat di memori.")
+    return excel_file_in_memory
