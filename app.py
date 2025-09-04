@@ -29,7 +29,7 @@ def index():
         try:
             filename = secure_filename(file.filename)
             file_name_without_ext = os.path.splitext(filename)[0]
-            output_filename = f"{file_name_without_ext}_diolah.xlsx"
+            output_filename = f"{file_name_without_ext}.xlsx"
             
             file_extension = filename.rsplit(".", 1)[1].lower()
 
