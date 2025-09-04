@@ -45,7 +45,7 @@ def extract_and_process_pdf(pdf_path):
 
 
 def clean_data(df_raw):
-    print("Menerapkan aturan pembersihan pada data...")
+    print("Pembersihan data...")
     processed_data = []
     for index, row in df_raw.iterrows():
         nama_produk_raw = str(row.get('Nama Produk', ''))
@@ -68,8 +68,10 @@ def clean_data(df_raw):
                 nama_produk_clean = nama_produk_clean.split(match.group(0))[0].strip()
                 varian = match.group(2).strip()
             
+            nama_produk_terbatas = nama_produk_clean[:90]
+                        
             processed_data.append({
-                'Nama Produk': nama_produk_clean,
+                'Nama Produk': nama_produk_terbatas,
                 'Varian': varian,
                 'SKU': sku_final,
                 'Qty': int(qty)
