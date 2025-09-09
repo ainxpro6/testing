@@ -2,7 +2,7 @@
 @keyframes fadeInSlideUp {
     from {
         opacity: 0;
-        transform: translateY(30px);
+        transform: translateY(20px);
     }
     to {
         opacity: 1;
@@ -21,7 +21,7 @@
         transform: translateY(0);
     }
     50% {
-        transform: translateY(-10px);
+        transform: translateY(-8px);
     }
 }
 
@@ -34,12 +34,11 @@
 body {
     min-height: 100vh;
     margin: 0;
-    font-family: 'Poppins', sans-serif; /* Menggunakan Google Font */
-    color: #333;
-    /* Animasi gradasi latar belakang yang halus */
-    background: linear-gradient(-45deg, #e0eafc, #cfdef3, #eef1f5, #c3cfe2);
-    background-size: 400% 400%;
-    animation: gradientAnimation 15s ease infinite;
+    font-family: 'Poppins', sans-serif;
+    color: #334155; /* Warna teks yang lebih lembut */
+    background: linear-gradient(135deg, #f0f4f8, #e2e8f0); /* Gradien latar belakang yang lebih halus */
+    background-size: 200% 200%;
+    animation: gradientAnimation 12s ease infinite;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -50,19 +49,19 @@ body {
 @media (prefers-color-scheme: dark) {
     body {
         color: #e2e8f0;
-        background: linear-gradient(-45deg, #0f2027, #203a43, #2c5364, #1a202c);
-        background-size: 400% 400%;
+        background: linear-gradient(135deg, #1e293b, #0f172a);
+        background-size: 200% 200%;
     }
     .card {
-        background: rgba(26, 32, 44, 0.85);
-        border-color: #4a5568;
+        background: rgba(30, 41, 59, 0.85); /* Warna kartu yang lebih gelap */
+        border-color: #334155;
     }
     .drop-zone {
-        background-color: #2d3748;
-        border-color: #4a5568;
+        background-color: #1e293b;
+        border-color: #334155;
     }
     .text-muted {
-        color: #a0aec0 !important;
+        color: #94a3b8 !important;
     }
 }
 
@@ -71,10 +70,10 @@ body {
     background: rgba(255, 255, 255, 0.85);
     backdrop-filter: blur(15px);
     -webkit-backdrop-filter: blur(15px);
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(226, 232, 240, 0.5); /* Border yang lebih halus */
     border-radius: 20px;
-    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
-    animation: fadeInSlideUp 0.8s ease-out forwards;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05); /* Shadow yang lebih halus */
+    animation: fadeInSlideUp 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards; /* Menggunakan easing function */
 }
 
 /* --- Gaya Zona Unggah File --- */
@@ -87,19 +86,19 @@ body {
     transition: all 0.3s ease-in-out;
 }
 .drop-zone:hover, .drop-zone.dragover {
-    border-color: #3182ce;
-    background-color: rgba(49, 130, 206, 0.08);
-    transform: scale(1.02);
+    border-color: #4f46e5; /* Warna yang lebih modern */
+    background-color: rgba(79, 70, 229, 0.08); /* Warna yang lebih modern */
+    transform: scale(1.01); /* Efek hover yang lebih halus */
 }
 
 .drop-zone-content i {
     font-size: 4rem;
-    color: #a0aec0;
+    color: #94a3b8; /* Warna ikon yang lebih lembut */
     transition: all 0.4s ease;
     animation: floatIcon 3s ease-in-out infinite;
 }
 .drop-zone:hover .drop-zone-content i {
-    color: #3182ce;
+    color: #4f46e5;
     transform: scale(1.1);
     animation-play-state: paused;
 }
@@ -108,15 +107,15 @@ body {
 .btn-primary {
     position: relative;
     overflow: hidden;
-    background: linear-gradient(135deg, #4299e1, #3182ce);
+    background: linear-gradient(135deg, #6366f1, #4f46e5); /* Gradien warna yang lebih modern */
     border: none;
     border-radius: 10px;
     transition: all 0.3s ease;
-    box-shadow: 0 4px 15px rgba(66, 153, 225, 0.2);
+    box-shadow: 0 4px 15px rgba(79, 70, 229, 0.2);
 }
 .btn-primary:hover:not(:disabled) {
-    transform: translateY(-3px);
-    box-shadow: 0 7px 20px rgba(66, 153, 225, 0.4);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 18px rgba(79, 70, 229, 0.4);
 }
 .btn-primary:disabled {
     cursor: not-allowed;
@@ -149,7 +148,17 @@ body {
 .alert {
     border-radius: 10px;
     border: none;
+    font-size: 0.9rem; /* Ukuran font yang lebih kecil */
 }
 #file-name {
     font-weight: 500;
+}
+
+.text-primary {
+    color: #4f46e5 !important;
+}
+
+.powered-by {
+    color: #94a3b8 !important;
+    font-size: 0.8rem;
 }

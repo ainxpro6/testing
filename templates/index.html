@@ -15,22 +15,18 @@
 </head>
 <body>
     <div class="container mt-4" style="max-width: 600px;">
-        <div class="card shadow-sm">
-            <div class="card-body p-4">
-                <h1 class="text-center mb-4 text-primary">
+        <div class="card shadow-lg"> <div class="card-body p-5"> <h1 class="text-center mb-4 text-primary">
                     <i class="bi bi-file-earmark-arrow-up-fill me-2"></i>
                     Upload Picking List
                 </h1>
 
-                <div id="alert-container"></div>
-
-                <form method="POST" enctype="multipart/form-data" id="upload-form">
+                <div id="alert-container" class="mb-3"></div> <form method="POST" enctype="multipart/form-data" id="upload-form">
                     <div class="mb-4">
                         <div class="drop-zone" id="drop-zone">
                             <div class="drop-zone-content">
                                 <i class="bi bi-cloud-arrow-up-fill"></i>
                                 <div class="drop-zone-text fs-6 mt-3">Seret file ke sini atau klik untuk upload</div>
-                                <div class="text-muted mt-2">Format: .xls .xlsx .pdf</div>
+                                <div class="text-muted mt-2">Format: .xls, .xlsx, .pdf</div>
                             </div>
                             <input type="file" name="file" class="form-control d-none" required accept=".pdf, .xlsx, .xls" id="file-input">
                         </div>
@@ -51,8 +47,7 @@
             </div>
         </div>
 
-        <div class="text-center mt-4 text-muted small border-top pt-3">
-            Powered by <strong class="text-primary">Davit Maulana</strong> | &copy; 2025
+        <div class="text-center mt-4 pt-3 powered-by"> Powered by <strong class="text-primary">Davit Maulana</strong> | &copy; 2025
 			<br/>
 			Versi 2.0
         </div>
@@ -68,9 +63,7 @@
             const submitButton = document.getElementById("submit-button");
             const alertContainer = document.getElementById("alert-container");
 
-            // --- FUNGSI ALERT YANG DIPERBARUI ---
             function showAlert(message, category = 'danger') {
-                // Hapus alert yang mungkin masih ada
                 alertContainer.innerHTML = '';
                 
                 const wrapper = document.createElement('div');
@@ -83,7 +76,6 @@
 
                 alertContainer.append(wrapper);
                 
-                // Jika ini adalah pesan sukses, atur agar menghilang setelah 5 detik
                 if (category === 'success') {
                     const alertElement = wrapper.firstChild;
                     setTimeout(() => {
@@ -91,11 +83,10 @@
                         if (bsAlert) {
                             bsAlert.close();
                         }
-                    }, 5000); // 5000 milidetik = 5 detik
+                    }, 5000);
                 }
             }
 
-            // --- Logika Drop Zone ---
             dropZone.addEventListener("click", () => fileInput.click());
             dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('dragover'); });
             dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
@@ -108,12 +99,11 @@
                 }
             });
 
-            // --- Logika Preview File ---
             fileInput.addEventListener("change", () => {
                 const preview = document.getElementById('file-preview');
                 const icon = document.getElementById('file-icon');
                 const nameDisplay = document.getElementById('file-name');
-                alertContainer.innerHTML = ''; // Hapus alert saat file baru dipilih
+                alertContainer.innerHTML = '';
 
                 preview.classList.add('d-none');
                 icon.className = 'bi fs-2 me-2';
@@ -139,7 +129,6 @@
                 }
             });
 
-            // --- Logika Submit Form ---
             uploadForm.addEventListener("submit", async function(e) {
                 e.preventDefault(); 
                 if (fileInput.files.length === 0) { showAlert("⚠️ Pilih file terlebih dahulu!", "warning"); return; }
