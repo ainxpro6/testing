@@ -83,14 +83,14 @@ def clean_data(df_raw):
                     else:
                         nama_produk_final = prev_text_1
             
-            if 'Buyer Notes:' in nama_produk_raw:
-                nama_produk_raw = nama_produk_raw.split('Buyer Notes:')[0]
+            if 'Buyer Notes:' in nama_produk_final:
+                nama_produk_final = nama_produk_final.split('Buyer Notes:')[0]
 
             sku_joined = sku_raw.replace('\n', '')
             sku_cleaned = re.sub('defa', '', sku_joined, flags=re.IGNORECASE).strip()
             sku_final = re.sub(r'^.\s', '', sku_cleaned)
             
-            nama_produk_clean = ' '.join(nama_produk_raw.replace('\n', ' ').split())
+            nama_produk_clean = ' '.join(nama_produk_final.replace('\n', ' ').split())
             varian = ''
             match = re.search(r'(variant:|riant:)(.*)', nama_produk_clean, re.IGNORECASE)
             if match:
