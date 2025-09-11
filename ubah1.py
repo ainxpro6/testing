@@ -86,9 +86,9 @@ def clean_data(df_raw):
             if 'Buyer Notes:' in nama_produk_final:
                 nama_produk_final = nama_produk_final.split('Buyer Notes:')[0]
 
-            sku_joined = sku_raw.replace('\n', '')
+            sku_joined = sku_final.replace('\n', '')
             sku_cleaned = re.sub('defa', '', sku_joined, flags=re.IGNORECASE).strip()
-            sku_final = re.sub(r'^.\s', '', sku_cleaned)
+            sku_final_cleaned = re.sub(r'^.\s', '', sku_cleaned)
             
             nama_produk_clean = ' '.join(nama_produk_final.replace('\n', ' ').split())
             varian = ''
@@ -102,7 +102,7 @@ def clean_data(df_raw):
             processed_data.append({
                 'Nama Produk': nama_produk_terbatas,
                 'Varian': varian,
-                'SKU': sku_final,
+                'SKU': sku_final_cleaned,
                 'Qty': int(qty)
             })
             
