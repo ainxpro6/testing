@@ -69,6 +69,8 @@ def clean_data(df_raw):
             sku_cleaned = re.sub('defa', '', sku_joined, flags=re.IGNORECASE).strip()
             sku_final = re.sub(r'^.\s', '', sku_cleaned)
             
+            sku_terbatas = sku_final[:21]
+            
             nama_produk_clean = ' '.join(nama_produk_raw.replace('\n', ' ').split())
             varian = ''
             match = re.search(r'(variant:|riant:)(.*)', nama_produk_clean, re.IGNORECASE)
@@ -81,7 +83,7 @@ def clean_data(df_raw):
             processed_data.append({
                 'Nama Produk': nama_produk_terbatas,
                 'Varian': varian,
-                'SKU': sku_final,
+                'SKU': sku_terbatas,
                 'Qty': int(qty_clean)
             })
             
