@@ -45,52 +45,30 @@ def extract_and_process_pdf(pdf_path):
 
 
 def clean_data(df_raw):
-    """
-    Fungsi yang diperbarui dengan logika Qty yang lebih kuat.
-    """
-    print("Menerapkan aturan pembersihan cerdas pada data...")
+    print("Pembersihan data...")
     processed_data = []
-    
-    for i in range(len(df_raw)):
-        current_row = df_raw.iloc[i]
-        qty_raw = str(current_row.get('Qty', ''))
+    for index, row in df_raw.iterrows():
+        nama_produk_raw = str(row.get('Nama Produk', ''))
+        sku_raw = str(row.get('SKU', ''))
+        qty_raw = str(row.get('Qty', '')) # Ambil data Qty mentah
 
-        # --- PERBAIKAN UTAMA DI SINI ---
+        # --- PERUBAHAN UTAMA ---
         # Cari rangkaian angka pertama di dalam string Qty yang mungkin kotor
         qty_match = re.search(r'\d+', qty_raw)
 
-        # Gunakan baris yang punya QTY sebagai "Jangkar" (Anchor)
+        # Lanjutkan hanya jika angka ditemukan di dalam sel Qty
         if qty_match:
-            qty = qty_match.group(0) # Ambil angka yang bersih (misal: '32' dari '32\nman')
-
-            # Inisialisasi semua bagian data
-            nama_produk_final = ""
-            varian_final = ""
-            sku_final = str(current_row.get('SKU', ''))
-
-            if current_row.get('Nama Produk'):
-                nama_produk_final = str(current_row.get('Nama Produk'))
-            else:
-                if i > 0:
-                    prev_row_1 = df_raw.iloc[i-1]
-                    prev_text_1 = str(prev_row_1.get('Nama Produk', ''))
-                    
-                    if 'Variant:' in prev_text_1 or 'riant:' in prev_text_1:
-                        varian_final = re.sub(r'(variant:|riant:)', '', prev_text_1, flags=re.IGNORECASE).strip()
-                        if i > 1:
-                            prev_row_2 = df_raw.iloc[i-2]
-                            nama_produk_final = str(prev_row_2.get('Nama Produk', ''))
-                    else:
-                        nama_produk_final = prev_text_1
+            qty_clean = qty_match.group(0) # Ekstrak angka yang bersih (misal: '32' dari '32\nman')
             
-            if 'Buyer Notes:' in nama_produk_final:
-                nama_produk_final = nama_produk_final.split('Buyer Notes:')[0]
+            # Lanjutkan dengan sisa logika pembersihan yang sudah ada
+            if 'Buyer Notes:' in nama_produk_raw:
+                nama_produk_raw = nama_produk_raw.split('Buyer Notes:')[0]
 
-            sku_joined = sku_final.replace('\n', '')
+            sku_joined = sku_raw.replace('\n', '')
             sku_cleaned = re.sub('defa', '', sku_joined, flags=re.IGNORECASE).strip()
-            sku_final_cleaned = re.sub(r'^.\s', '', sku_cleaned)
+            sku_final = re.sub(r'^.\s', '', sku_cleaned)
             
-            nama_produk_clean = ' '.join(nama_produk_final.replace('\n', ' ').split())
+            nama_produk_clean = ' '.join(nama_produk_raw.replace('\n', ' ').split())
             varian = ''
             match = re.search(r'(variant:|riant:)(.*)', nama_produk_clean, re.IGNORECASE)
             if match:
@@ -98,16 +76,15 @@ def clean_data(df_raw):
                 varian = match.group(2).strip()
             
             nama_produk_terbatas = nama_produk_clean[:90]
-                        
+            
             processed_data.append({
                 'Nama Produk': nama_produk_terbatas,
                 'Varian': varian,
-                'SKU': sku_final_cleaned,
-                'Qty': int(qty)
+                'SKU': sku_final,
+                'Qty': int(qty_clean) # Gunakan angka yang sudah bersih
             })
             
     return processed_data
-
 
 def save_to_excel_in_memory(data):
     wb = Workbook()
@@ -165,3 +142,4 @@ def main(file_path):
 
     print("\nProses Selesai! File Excel dibuat di memori.")
     return excel_file_in_memory
+
