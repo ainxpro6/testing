@@ -6,7 +6,7 @@ from openpyxl.styles import Font, Alignment, Border, Side
 from io import BytesIO
 
 def extract_and_process_pdf(pdf_path):
-    print("Memulai metode 'Grid' untuk ekstraksi data mentah...")
+    print("Memulai metode 'Grid' untuk ekstraksi data raw...")
 
     KOLOM_BOUNDARIES = [
         (0, 350), (350, 470), (470, 540), (540, 595)
@@ -47,20 +47,21 @@ def extract_and_process_pdf(pdf_path):
 def clean_data(df_raw):
     print("Pembersihan data...")
     processed_data = []
+    
+    junk_keywords = ['Jumlah Pesanan', 'Picking List', 'Halaman:', 'Dicetak Oleh', 'Tanggal Cetak']
+
     for index, row in df_raw.iterrows():
         nama_produk_raw = str(row.get('Nama Produk', ''))
         sku_raw = str(row.get('SKU', ''))
-        qty_raw = str(row.get('Qty', '')) # Ambil data Qty mentah
+        qty_raw = str(row.get('Qty', ''))
 
-        # --- PERUBAHAN UTAMA ---
-        # Cari rangkaian angka pertama di dalam string Qty yang mungkin kotor
+        if any(keyword in nama_produk_raw for keyword in junk_keywords):
+            continue
+
         qty_match = re.search(r'\d+', qty_raw)
-
-        # Lanjutkan hanya jika angka ditemukan di dalam sel Qty
-        if qty_match:
-            qty_clean = qty_match.group(0) # Ekstrak angka yang bersih (misal: '32' dari '32\nman')
+        if qty_match and sku_raw:
+            qty_clean = qty_match.group(0)
             
-            # Lanjutkan dengan sisa logika pembersihan yang sudah ada
             if 'Buyer Notes:' in nama_produk_raw:
                 nama_produk_raw = nama_produk_raw.split('Buyer Notes:')[0]
 
@@ -76,12 +77,12 @@ def clean_data(df_raw):
                 varian = match.group(2).strip()
             
             nama_produk_terbatas = nama_produk_clean[:90]
-            
+                        
             processed_data.append({
                 'Nama Produk': nama_produk_terbatas,
                 'Varian': varian,
                 'SKU': sku_final,
-                'Qty': int(qty_clean) # Gunakan angka yang sudah bersih
+                'Qty': int(qty_clean)
             })
             
     return processed_data
@@ -142,4 +143,3 @@ def main(file_path):
 
     print("\nProses Selesai! File Excel dibuat di memori.")
     return excel_file_in_memory
-
