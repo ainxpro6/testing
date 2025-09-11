@@ -45,14 +45,43 @@ def extract_and_process_pdf(pdf_path):
 
 
 def clean_data(df_raw):
-    print("Pembersihan data...")
+    """
+    Fungsi yang diperbarui dengan logika Qty yang lebih kuat.
+    """
+    print("Menerapkan aturan pembersihan cerdas pada data...")
     processed_data = []
-    for index, row in df_raw.iterrows():
-        nama_produk_raw = str(row.get('Nama Produk', ''))
-        sku_raw = str(row.get('SKU', ''))
-        qty = str(row.get('Qty', ''))
+    
+    for i in range(len(df_raw)):
+        current_row = df_raw.iloc[i]
+        qty_raw = str(current_row.get('Qty', ''))
 
-        if qty and qty.isdigit():
+        # --- PERBAIKAN UTAMA DI SINI ---
+        # Cari rangkaian angka pertama di dalam string Qty yang mungkin kotor
+        qty_match = re.search(r'\d+', qty_raw)
+
+        # Gunakan baris yang punya QTY sebagai "Jangkar" (Anchor)
+        if qty_match:
+            qty = qty_match.group(0) # Ambil angka yang bersih (misal: '32' dari '32\nman')
+
+            # Inisialisasi semua bagian data
+            nama_produk_final = ""
+            varian_final = ""
+            sku_final = str(current_row.get('SKU', ''))
+
+            if current_row.get('Nama Produk'):
+                nama_produk_final = str(current_row.get('Nama Produk'))
+            else:
+                if i > 0:
+                    prev_row_1 = df_raw.iloc[i-1]
+                    prev_text_1 = str(prev_row_1.get('Nama Produk', ''))
+                    
+                    if 'Variant:' in prev_text_1 or 'riant:' in prev_text_1:
+                        varian_final = re.sub(r'(variant:|riant:)', '', prev_text_1, flags=re.IGNORECASE).strip()
+                        if i > 1:
+                            prev_row_2 = df_raw.iloc[i-2]
+                            nama_produk_final = str(prev_row_2.get('Nama Produk', ''))
+                    else:
+                        nama_produk_final = prev_text_1
             
             if 'Buyer Notes:' in nama_produk_raw:
                 nama_produk_raw = nama_produk_raw.split('Buyer Notes:')[0]
